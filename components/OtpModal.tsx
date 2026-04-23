@@ -16,8 +16,6 @@ import {
 import { sendEmailOtp, verifyOTP } from "@/lib/actions/users.actions";
 import { useRouter } from "next/navigation";
 
-//TODO : IMPROVE THE DESIGN OF OTP SLOTS, CURRENTLY THEY JUST INCREASE THE OUTER DIV'S WIDTH WHEN FILLED
-
 const OtpModal = ({
   email,
   accountId,
@@ -48,58 +46,65 @@ const OtpModal = ({
   };
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogContent className="!rounded-2xl">
-        <AlertDialogHeader className="relative flex justify-center ">
-          <AlertDialogTitle className=" text-center text-xl flex justify-center">
-            Enter your OTP
+      <AlertDialogContent className="w-[92vw] max-w-md rounded-3xl border border-rose-100 bg-white p-6 sm:p-7">
+        <AlertDialogHeader className="relative">
+          <button
+            type="button"
+            className="absolute right-0 top-0 rounded-full p-1 hover:bg-rose-50 transition-colors"
+            onClick={() => setOpen(false)}
+          >
             <img
               src="/assets/icons/close-dark.svg"
               alt="close"
-              className="relative h-[20px] w-[20px] left-[50px] bottom-[15px] sm:left-[150px] cursor-pointer "
-              onClick={() => setOpen(false)}
+              className="h-5 w-5"
             />
+          </button>
+          <AlertDialogTitle className="text-center text-2xl font-bold text-light-100">
+            Enter your OTP
           </AlertDialogTitle>
-          <AlertDialogDescription className="flex justify-center overflow-auto text-light-100 m-2">
-            <span>
-              We've sent your code to the&nbsp;{" "}
-              <span className="text-red">{email}</span>
-            </span>
+          <AlertDialogDescription className="mt-2 text-center text-sm text-gray-600">
+            We&apos;ve sent your code to <span className="text-red">{email}</span>
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <div className="flex justify-center">
-          <InputOTP maxLength={6} value={OTP} onChange={setOTP}>
-            <InputOTPGroup className="space-x-2 sm:space-x-4 md:space-x-8">
+        <div className="mt-2 flex justify-center">
+          <InputOTP
+            maxLength={6}
+            value={OTP}
+            onChange={setOTP}
+            containerClassName="justify-center"
+          >
+            <InputOTPGroup className="gap-2 sm:gap-3">
               <InputOTPSlot
                 index={0}
-                className="w-10 md:w-full md:p-5 !rounded-xl"
+                className="!h-12 !w-12 sm:!h-14 sm:!w-14 !rounded-2xl !border-rose-200 !bg-rose-50 !text-light-100"
               />
               <InputOTPSlot
                 index={1}
-                className="w-10 md:w-full md:p-5 !rounded-xl"
+                className="!h-12 !w-12 sm:!h-14 sm:!w-14 !rounded-2xl !border-rose-200 !bg-rose-50 !text-light-100"
               />
               <InputOTPSlot
                 index={2}
-                className="w-10 md:w-full md:p-5 !rounded-xl"
+                className="!h-12 !w-12 sm:!h-14 sm:!w-14 !rounded-2xl !border-rose-200 !bg-rose-50 !text-light-100"
               />
               <InputOTPSlot
                 index={3}
-                className="w-10 md:w-full md:p-5 !rounded-xl"
+                className="!h-12 !w-12 sm:!h-14 sm:!w-14 !rounded-2xl !border-rose-200 !bg-rose-50 !text-light-100"
               />
               <InputOTPSlot
                 index={4}
-                className="w-10 md:w-full md:p-5 !rounded-xl"
+                className="!h-12 !w-12 sm:!h-14 sm:!w-14 !rounded-2xl !border-rose-200 !bg-rose-50 !text-light-100"
               />
               <InputOTPSlot
                 index={5}
-                className="w-10 md:w-full md:p-5 !rounded-xl"
+                className="!h-12 !w-12 sm:!h-14 sm:!w-14 !rounded-2xl !border-rose-200 !bg-rose-50 !text-light-100"
               />
             </InputOTPGroup>
           </InputOTP>
         </div>
 
-        <AlertDialogFooter className="flex justify-center p-2">
+        <AlertDialogFooter className="mt-4 flex justify-center p-0">
           <AlertDialogAction
-            className="rounded-3xl w-full bg-red text-white h-10 hover:bg-rose-600"
+            className="h-11 w-full rounded-full bg-red text-white font-semibold hover:bg-rose-600"
             onClick={handleSubmit}
           >
             Submit
@@ -113,11 +118,15 @@ const OtpModal = ({
             )}
           </AlertDialogAction>
         </AlertDialogFooter>
-        <div className="text-sm flex justify-center">
-          Didn't get a code?{" "}
-          <p className="ml-2 text-red cursor-pointer" onClick={handleResendOtp}>
+        <div className="mt-3 text-sm text-center text-gray-600">
+          Didn&apos;t get a code?{" "}
+          <button
+            type="button"
+            className="ml-1 text-red font-medium hover:text-rose-600"
+            onClick={handleResendOtp}
+          >
             Click to resend
-          </p>
+          </button>
         </div>
       </AlertDialogContent>
     </AlertDialog>

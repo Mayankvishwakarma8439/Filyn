@@ -1,10 +1,7 @@
 import {
-  constructFileUrl,
   convertFileSize,
   formatDateTime,
-  getFileType,
 } from "@/lib/utils";
-import { MoreVertical } from "lucide-react";
 import Link from "next/link";
 import { Models } from "node-appwrite";
 import React from "react";
@@ -12,11 +9,9 @@ import Thumbnail from "./Thumbnail";
 import DropDown from "./DropDown";
 
 const Card = ({ file }: { file: Models.Document }) => {
-  const fileUrl = constructFileUrl(file.bucketFileId);
   const fileSize = convertFileSize(file.size);
   const fileName = file.name.slice(0, 20) + "...";
   const fileDate = formatDateTime(file.$updatedAt);
-  const fileType = getFileType(file.name);
   return (
     <Link
       href={file.url}
@@ -26,7 +21,13 @@ const Card = ({ file }: { file: Models.Document }) => {
     >
       <div className="flex p-3 justify-between">
         <div className="h-[60px] w-[60px]  overflow-auto object-cover rounded-full">
-          <img src={fileUrl} className="h-full w-full" />
+          <Thumbnail
+            type={file.type}
+            extension={file.extension}
+            url={file.url}
+            className="h-full w-full"
+            imageClassName="!h-full !w-full"
+          />
         </div>
         <div className="flex flex-col items-end gap-2">
           <DropDown file={file}></DropDown>

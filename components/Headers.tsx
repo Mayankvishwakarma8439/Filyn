@@ -6,9 +6,17 @@ import { clearUserSession } from "@/lib/actions/users.actions";
 const Headers = ({
   userId,
   accountId,
+  searchableFiles,
 }: {
   userId: string;
   accountId: string;
+  searchableFiles: {
+    $id: string;
+    name: string;
+    url: string;
+    type: string;
+    extension: string;
+  }[];
 }) => {
   const handleLogout = async () => {
     try {
@@ -19,7 +27,7 @@ const Headers = ({
   };
   return (
     <div className="h-[90px] flex justify-between w-full items-center pr-5 mb-3 mt-3">
-      <Search></Search>
+      <Search files={searchableFiles}></Search>
       <div className="flex justify-center items-center gap-8">
         <Uploader ownerId={userId} accountId={accountId}></Uploader>
         <div
