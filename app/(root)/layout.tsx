@@ -1,4 +1,5 @@
 import Headers from "@/components/Headers";
+import FileAssistant from "@/components/FileAssistant";
 import MobileNavigation from "@/components/MobileNavigation";
 import Sidebar from "@/components/Sidebar";
 import { getFiles } from "@/lib/actions/files.actions";
@@ -54,6 +55,8 @@ const layout = async ({ children }: { children: ReactNode }) => {
             searchableFiles={searchableFiles}
           ></Headers>
         </div>
+
+        <FileAssistant />
 
         <div className="h-full">{children}</div>
         <Toaster></Toaster>

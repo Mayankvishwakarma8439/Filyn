@@ -20,6 +20,14 @@ export type BackendFile = {
   owner: string | BackendUser;
   accountId: string;
   bucketFileId: string;
+  aiSummary?: string | null;
+  aiSearchText?: string | null;
+  aiKeywords?: string[];
+  aiProcessedAt?: string | null;
+  aiIndexStatus?: "pending" | "ready" | "failed" | string;
+  aiIndexError?: string | null;
+  aiIndexAttempts?: number;
+  aiLastIndexedAt?: string | null;
 };
 
 export type DocumentList<T> = {

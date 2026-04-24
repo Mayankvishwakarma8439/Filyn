@@ -17,6 +17,7 @@ import {
   renameFileById,
 } from "../backend/db";
 import type { BackendUser } from "../backend/types";
+import { indexUploadedFile } from "../backend/gemini";
 
 export interface uploadFileProps {
   file: File;
@@ -57,6 +58,9 @@ export const uploadFile = async ({
       bucketFileId,
     };
     const newFile = await insertFile(fileDocument);
+    void indexUploadedFile(newFile, buffer, file.type).catch((error) => {
+      console.log("Background Gemini indexing failed", error);
+    });
     revalidatePath(path);
     return JSON.parse(JSON.stringify(newFile));
   } catch (error) {

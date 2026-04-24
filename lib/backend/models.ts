@@ -42,6 +42,14 @@ const fileSchema = new Schema(
     owner: { type: String, required: true, index: true },
     accountId: { type: String, required: true, index: true },
     bucketFileId: { type: String, required: true, unique: true },
+    aiSummary: { type: String },
+    aiSearchText: { type: String },
+    aiKeywords: [{ type: String }],
+    aiProcessedAt: { type: Date },
+    aiIndexStatus: { type: String, default: "pending", index: true },
+    aiIndexError: { type: String },
+    aiIndexAttempts: { type: Number, default: 0 },
+    aiLastIndexedAt: { type: Date },
   },
   { timestamps: true }
 );

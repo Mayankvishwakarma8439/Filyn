@@ -44,6 +44,14 @@ const toBackendFile = (
     owner: string;
     accountId: string;
     bucketFileId: string;
+    aiSummary?: string | null;
+    aiSearchText?: string | null;
+    aiKeywords?: string[];
+    aiProcessedAt?: Date | string | null;
+    aiIndexStatus?: string;
+    aiIndexError?: string | null;
+    aiIndexAttempts?: number;
+    aiLastIndexedAt?: Date | string | null;
     createdAt: Date;
     updatedAt: Date;
   },
@@ -60,6 +68,20 @@ const toBackendFile = (
   owner,
   accountId: file.accountId,
   bucketFileId: file.bucketFileId,
+  aiSummary: file.aiSummary ?? undefined,
+  aiSearchText: file.aiSearchText ?? undefined,
+  aiKeywords: file.aiKeywords,
+  aiProcessedAt:
+    file.aiProcessedAt instanceof Date
+      ? file.aiProcessedAt.toISOString()
+      : file.aiProcessedAt || null,
+  aiIndexStatus: file.aiIndexStatus,
+  aiIndexError: file.aiIndexError ?? null,
+  aiIndexAttempts: file.aiIndexAttempts,
+  aiLastIndexedAt:
+    file.aiLastIndexedAt instanceof Date
+      ? file.aiLastIndexedAt.toISOString()
+      : file.aiLastIndexedAt || null,
 });
 
 export const findUserByEmail = async (email: string) => {
@@ -203,6 +225,48 @@ export const insertFile = async (file: BackendFile) => {
     ...file,
     owner: owner || (typeof file.owner === "string" ? file.owner : file.owner.$id),
   };
+};
+
+export const updateFileAiMetadata = async ({
+  fileId,
+  aiSummary,
+  aiSearchText,
+  aiKeywords,
+  aiProcessedAt,
+  aiIndexStatus = "ready",
+  aiIndexError = null,
+  aiIndexAttempts = 1,
+  aiLastIndexedAt = new Date().toISOString(),
+}: {
+  fileId: string;
+  aiSummary: string;
+  aiSearchText: string;
+  aiKeywords: string[];
+  aiProcessedAt: string;
+  aiIndexStatus?: string;
+  aiIndexError?: string | null;
+  aiIndexAttempts?: number;
+  aiLastIndexedAt?: string;
+}) => {
+  await connectToDatabase();
+  const updatedFile = await FileModel.findOneAndUpdate(
+    { filynId: fileId },
+    {
+      aiSummary,
+      aiSearchText,
+      aiKeywords,
+      aiProcessedAt: new Date(aiProcessedAt),
+      aiIndexStatus,
+      aiIndexError,
+      aiIndexAttempts,
+      aiLastIndexedAt: new Date(aiLastIndexedAt),
+    },
+    { new: true }
+  ).lean();
+
+  if (!updatedFile) return null;
+  const owner = await findUserById(updatedFile.owner);
+  return toBackendFile(updatedFile, owner || updatedFile.owner);
 };
 
 export const renameFileById = async ({

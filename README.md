@@ -60,6 +60,9 @@ SMTP_PORT=465
 SMTP_USER=yourgmail@gmail.com
 SMTP_PASS=your_gmail_app_password
 SMTP_FROM="Filyn <yourgmail@gmail.com>"
+
+GEMINI_API_KEY=your_google_ai_studio_api_key
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
 ### 4. Run the development server
@@ -78,6 +81,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the app.
 2. **Upload files** via drag-and-drop or file picker
 3. **Preview, rename, or delete** files from the dashboard
 4. **Access the app** on mobile or desktop with responsive design
+5. **Ask the AI assistant** questions like “What’s in this contract?” or “Show me files mentioning rent.”
 
 ## 🤝 Contribution
 
