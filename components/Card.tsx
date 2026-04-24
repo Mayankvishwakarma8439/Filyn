@@ -2,16 +2,17 @@ import {
   convertFileSize,
   formatDateTime,
 } from "@/lib/utils";
+import type { BackendFile } from "@/lib/backend/types";
 import Link from "next/link";
-import { Models } from "node-appwrite";
 import React from "react";
 import Thumbnail from "./Thumbnail";
 import DropDown from "./DropDown";
 
-const Card = ({ file }: { file: Models.Document }) => {
+const Card = ({ file }: { file: BackendFile }) => {
   const fileSize = convertFileSize(file.size);
   const fileName = file.name.slice(0, 20) + "...";
   const fileDate = formatDateTime(file.$updatedAt);
+  const ownerName = typeof file.owner === "string" ? "You" : file.owner.fullname;
   return (
     <Link
       href={file.url}
@@ -38,7 +39,7 @@ const Card = ({ file }: { file: Models.Document }) => {
         <p className=" font-semibold">{fileName}</p>
         <p>{fileDate}</p>
         <small>
-          <p className="mt-1 text-gray-400">By : {file.owner.fullname}</p>
+          <p className="mt-1 text-gray-400">By : {ownerName}</p>
         </small>
       </div>
     </Link>

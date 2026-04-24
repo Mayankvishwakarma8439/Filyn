@@ -1,17 +1,17 @@
 # 📁 Filyn — Smart Cloud Storage for the Modern Web
 
-Filyn is a cloud storage web app that allows users to securely upload, manage, and access their files in one unified interface. Built with Next.js, Appwrite, and TailwindCSS, focusing on simplicity, speed, and scalability.
+Filyn is a cloud storage web app that allows users to securely upload, manage, and access their files in one unified interface. Built with Next.js, MongoDB Atlas, Mongoose, AWS S3, Gmail SMTP, and TailwindCSS, focusing on simplicity, speed, and scalability.
 
 
 
 ## 🚀 Features
 
-- **🔐 Authentication with OTP** — Users can sign up or log in using secure email OTP verification via Appwrite
+- **🔐 Authentication with OTP** — Users can sign up or log in using secure email OTP verification via the custom backend
 - **🧠 Persistent Session Handling** — Server-managed session cookies for smooth login/logout flows
 - **☁️ File Upload & Preview** — Upload and preview files of any type (images, PDFs, docs, etc.) with smart thumbnails
 - **📱 Responsive UI** — Adaptive sidebar, headers, and mobile navigation for all devices
 - **🗂️ Organized File Management** — Visual representation of uploaded files, easy to delete or manage
-- **🧩 Server Actions** — Optimized Next.js 14/15 server actions for secure database and storage operations
+- **🧩 Server Actions** — Optimized Next.js server actions for secure database and storage operations
 - **💨 Modern UI/UX** — Clean, minimal design using TailwindCSS and shadcn/ui components
 
 ## 🧱 Tech Stack
@@ -19,10 +19,11 @@ Filyn is a cloud storage web app that allows users to securely upload, manage, a
 | Layer | Technology |
 |-------|-----------|
 | **Frontend** | Next.js 15, React, TailwindCSS, Shadcn/UI |
-| **Backend** | Appwrite (Auth, Database, Storage) |
-| **Server Actions** | Next.js Server Components + Appwrite SDK |
-| **File Handling** | Appwrite Storage SDK, React Dropzone |
-| **Deployment** | Vercel |
+| **Backend** | Custom Next.js server actions |
+| **Database** | MongoDB Atlas + Mongoose |
+| **File Handling** | AWS S3 + React Dropzone |
+| **Email Delivery** | Gmail SMTP + Nodemailer |
+| **Deployment** | Any Node-capable host |
 
 
 ## ⚙️ Setup & Installation
@@ -44,13 +45,21 @@ yarn install
 
 ### 3. Configure environment variables
 
-Create a `.env.local` file in the root directory with your Appwrite project details:
+Create a `.env.local` file in the root directory with your backend credentials:
 
 ```env
-NEXT_PUBLIC_APPWRITE_ENDPOINT=https://YOUR_APPWRITE_ENDPOINT/v1
-NEXT_PUBLIC_APPWRITE_PROJECT=YOUR_PROJECT_ID
-NEXT_PUBLIC_APPWRITE_DATABASE=YOUR_DATABASE_ID
-NEXT_PUBLIC_APPWRITE_STORAGE=YOUR_STORAGE_BUCKET_ID
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-url>/filyn?retryWrites=true&w=majority
+MONGODB_DB=filyn
+
+AWS_REGION=ap-south-1
+AWS_S3_BUCKET=your-filyn-bucket
+NEXT_PUBLIC_S3_PUBLIC_BASE_URL=https://your-filyn-bucket.s3.ap-south-1.amazonaws.com
+
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=yourgmail@gmail.com
+SMTP_PASS=your_gmail_app_password
+SMTP_FROM="Filyn <yourgmail@gmail.com>"
 ```
 
 ### 4. Run the development server
@@ -88,7 +97,8 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## 🙏 Acknowledgments
 
 - [Next.js](https://nextjs.org/) - The React Framework
-- [Appwrite](https://appwrite.io/) - Backend as a Service
+- [MongoDB Atlas](https://www.mongodb.com/atlas) - Managed MongoDB
+- [AWS S3](https://aws.amazon.com/s3/) - Object storage
+- [Nodemailer](https://nodemailer.com/about/) - SMTP email delivery
 - [TailwindCSS](https://tailwindcss.com/) - Utility-first CSS framework
 - [Shadcn/UI](https://ui.shadcn.com/) - Re-usable components
-

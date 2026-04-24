@@ -1,11 +1,23 @@
 "use server";
-import { createAdminClient } from "../appwrite";
-import { InputFile } from "node-appwrite/file";
-import { appwriteConfig } from "../appwrite/config";
-import { ID, Models, Query } from "node-appwrite";
 import { constructFileUrl, getFileType } from "../utils";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "./users.actions";
+import {
+  deleteFromS3,
+  getSignedFileUrl,
+  uploadToS3,
+} from "../backend/storage";
+import {
+  createId,
+  deleteFileById,
+  findFileById,
+  insertFile,
+  listFilesForOwner,
+  nowIso,
+  renameFileById,
+} from "../backend/db";
+import type { BackendUser } from "../backend/types";
+
 export interface uploadFileProps {
   file: File;
   ownerId: string;
@@ -18,37 +30,33 @@ export const uploadFile = async ({
   accountId,
   path,
 }: uploadFileProps) => {
-  const { storage, databases } = await createAdminClient();
   try {
-    console.log(getFileType(file.name));
-    const inputFile = InputFile.fromBuffer(file, file.name);
-    const bucketFile = await storage.createFile(
-      appwriteConfig.bucketID,
-      ID.unique(),
-      inputFile
-    );
+    const fileId = createId();
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const bucketFileId = `${accountId}/${fileId}-${safeName}`;
+    const buffer = Buffer.from(await file.arrayBuffer());
+    await uploadToS3({
+      key: bucketFileId,
+      body: buffer,
+      contentType: file.type,
+    });
+
+    const createdAt = nowIso();
+    const fileType = getFileType(file.name);
     const fileDocument = {
-      type: getFileType(file.name).type,
-      name: bucketFile.name,
-      url: constructFileUrl(bucketFile.$id),
-      extension: getFileType(bucketFile.name).extension,
-      size: bucketFile.sizeOriginal,
+      $id: fileId,
+      $createdAt: createdAt,
+      $updatedAt: createdAt,
+      type: fileType.type as FileType,
+      name: file.name,
+      url: constructFileUrl(bucketFileId),
+      extension: fileType.extension,
+      size: file.size,
       owner: ownerId,
       accountId,
-      bucketFileId: bucketFile.$id,
+      bucketFileId,
     };
-    const newFile = await databases
-      .createDocument(
-        appwriteConfig.dbID,
-        appwriteConfig.filesID,
-        ID.unique(),
-        fileDocument
-      )
-      .catch(async (error: unknown) => {
-        await storage.deleteFile(appwriteConfig.bucketID, bucketFile.$id);
-        console.log(error);
-        throw new Error("Failed to create file document");
-      });
+    const newFile = await insertFile(fileDocument);
     revalidatePath(path);
     return JSON.parse(JSON.stringify(newFile));
   } catch (error) {
@@ -56,25 +64,99 @@ export const uploadFile = async ({
     throw new Error("File upload Error");
   }
 };
-const createQueries = (currentUser: Models.Document) => {
-  const queries = [Query.equal("owner", currentUser.$id)];
-  return queries;
-};
 
 export const getFiles = async () => {
-  const { databases } = await createAdminClient();
   try {
-    const currentUser = await getCurrentUser();
+    const currentUser = (await getCurrentUser()) as BackendUser | null;
     if (!currentUser) throw new Error("User not found");
-    const queries = createQueries(currentUser);
-    const files = await databases.listDocuments(
-      appwriteConfig.dbID,
-      appwriteConfig.filesID,
-      queries
-    );
+    const documents = await listFilesForOwner(currentUser.$id);
+    const files = {
+      total: documents.length,
+      documents,
+    };
     return JSON.parse(JSON.stringify(files));
   } catch (error) {
     console.log(error);
     throw new Error("Error occurred while fetching files");
+  }
+};
+
+const revalidateFileViews = (path: string, fileType?: FileType) => {
+  revalidatePath(path);
+  revalidatePath("/");
+
+  if (fileType === "document") revalidatePath("/documents");
+  if (fileType === "image") revalidatePath("/images");
+  if (fileType === "video" || fileType === "audio") revalidatePath("/media");
+  if (fileType === "other") revalidatePath("/others");
+};
+
+export const renameFile = async ({
+  fileId,
+  name,
+  path,
+}: {
+  fileId: string;
+  name: string;
+  path: string;
+}) => {
+  try {
+    const trimmedName = name.trim();
+    if (!trimmedName) throw new Error("File name is required");
+
+    const existingFile = await findFileById(fileId);
+    if (!existingFile) throw new Error("File not found");
+
+    const updatedFile = await renameFileById({
+      fileId,
+      name: trimmedName,
+    });
+
+    revalidateFileViews(path, existingFile.type);
+    return JSON.parse(JSON.stringify(updatedFile));
+  } catch (error) {
+    console.log(error);
+    throw new Error("Error occurred while renaming file");
+  }
+};
+
+export const deleteFile = async ({
+  fileId,
+  path,
+}: {
+  fileId: string;
+  path: string;
+}) => {
+  try {
+    const existingFile = await findFileById(fileId);
+    if (!existingFile) throw new Error("File not found");
+
+    await deleteFromS3(existingFile.bucketFileId);
+    await deleteFileById(fileId);
+
+    revalidateFileViews(path, existingFile.type);
+    return JSON.parse(JSON.stringify({ success: true }));
+  } catch (error) {
+    console.log(error);
+    throw new Error("Error occurred while deleting file");
+  }
+};
+
+export const getFileAccessUrl = async ({
+  bucketFileId,
+  name,
+  download,
+}: {
+  bucketFileId: string;
+  name: string;
+  download?: boolean;
+}) => {
+  try {
+    return await getSignedFileUrl(bucketFileId, {
+      downloadName: download ? name : undefined,
+    });
+  } catch (error) {
+    console.log(error);
+    throw new Error("Error occurred while generating file link");
   }
 };

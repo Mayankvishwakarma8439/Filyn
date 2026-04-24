@@ -1,22 +1,15 @@
-"use server";
-import { createAdminClient } from "@/lib/appwrite";
-import { InputFile } from "node-appwrite/file";
-import { appwriteConfig } from "@/lib/appwrite/config";
-import { ID } from "node-appwrite";
+import { getS3ObjectUrl, uploadToS3 } from "@/lib/backend/storage";
 
 export const testUpload = async (file: File) => {
   try {
-    const { storage } = await createAdminClient();
+    const key = `test/${crypto.randomUUID()}-${file.name.replace(
+      /[^a-zA-Z0-9._-]/g,
+      "_"
+    )}`;
     const buffer = Buffer.from(await file.arrayBuffer());
-    const inputFile = InputFile.fromBuffer(buffer, file.name);
-    const res = await storage.createFile(
-      appwriteConfig.bucketID,
-      ID.unique(),
-      inputFile
-    );
-    console.log("✅ File uploaded:", res);
+    await uploadToS3({ key, body: buffer, contentType: file.type });
+    console.log("File uploaded:", getS3ObjectUrl(key));
   } catch (err) {
-    console.error("❌ Upload failed:", err);
+    console.error("Upload failed:", err);
   }
 };
-//Nothing

@@ -1,51 +1,110 @@
 "use client";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuPortal,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { constructDownloadUrl } from "@/lib/utils";
+import type { BackendFile } from "@/lib/backend/types";
+import { deleteFile, getFileAccessUrl, renameFile } from "@/lib/actions/files.actions";
+import { convertFileSize, formatDateTime } from "@/lib/utils";
 import { MoreVertical } from "lucide-react";
-import Link from "next/link";
-import { Models } from "node-appwrite";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
-export default function DropdownMenuDemo({ file }: { file: Models.Document }) {
+export default function DropdownMenuDemo({ file }: { file: BackendFile }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [action, setAction] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [fileName, setFileName] = useState(file.name);
+  const pathname = usePathname();
+  const router = useRouter();
   const closeAllModals = () => {
     setIsDropdownOpen(false);
     setFileName(file.name);
     setAction("");
     setIsModalOpen(false);
   };
-  //TODO : IMPLEMENT HANDLE ACTION FUNCTION FOR HANDLING SHARE , DELETE AND RENAME FUNCTIONALITIES:
-  const handleAction = async () => {};
+
+  const handleAction = async () => {
+    try {
+      setIsLoading(true);
+
+      if (action === "Rename") {
+        await renameFile({
+          fileId: file.$id,
+          name: fileName,
+          path: pathname,
+        });
+        router.refresh();
+        toast.success("File renamed");
+      }
+
+      if (action === "Delete") {
+        await deleteFile({
+          fileId: file.$id,
+          path: pathname,
+        });
+        router.refresh();
+        toast.success("File deleted");
+      }
+
+      if (action === "Share") {
+        const shareUrl = await getFileAccessUrl({
+          bucketFileId: file.bucketFileId,
+          name: file.name,
+        });
+
+        if (navigator.share) {
+          await navigator.share({
+            title: file.name,
+            text: `Open ${file.name}`,
+            url: shareUrl,
+          });
+        } else {
+          await navigator.clipboard.writeText(shareUrl);
+          toast.success("Share link copied");
+        }
+      }
+
+      closeAllModals();
+    } catch (error) {
+      console.log(error);
+      toast.error(`Couldn't ${action.toLowerCase()} file`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDownload = async (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    try {
+      const downloadUrl = await getFileAccessUrl({
+        bucketFileId: file.bucketFileId,
+        name: file.name,
+        download: true,
+      });
+      window.open(downloadUrl, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      console.log(error);
+      toast.error("Couldn't download file");
+    }
+  };
 
   const dropdownItems = [
     { name: "Share", image: "./assets/icons/share.svg" },
@@ -74,7 +133,12 @@ export default function DropdownMenuDemo({ file }: { file: Models.Document }) {
               {action === "Delete" && (
                 <>Do you really want to delete the file?</>
               )}
-              {action === "Share" && <>Click to share File</>}
+              {action === "Share" && (
+                <>Generate a secure link for this file and share it.</>
+              )}
+              {action === "Details" && (
+                <>Inspect this file's metadata and storage details.</>
+              )}
             </DialogDescription>
             {action === "Rename" && (
               <input
@@ -86,14 +150,64 @@ export default function DropdownMenuDemo({ file }: { file: Models.Document }) {
                 placeholder="Enter file name"
               />
             )}
+            {action === "Share" && (
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-600">
+                A time-limited secure link will be generated when you continue.
+              </div>
+            )}
+            {action === "Details" && (
+              <div className="grid gap-3 rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-gray-500">Name</span>
+                  <span className="max-w-[220px] truncate font-medium text-light-100">
+                    {file.name}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-gray-500">Type</span>
+                  <span className="font-medium capitalize text-light-100">
+                    {file.type}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-gray-500">Size</span>
+                  <span className="font-medium text-light-100">
+                    {convertFileSize(file.size)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-gray-500">Created</span>
+                  <span className="font-medium text-light-100">
+                    {formatDateTime(file.$createdAt)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-gray-500">Updated</span>
+                  <span className="font-medium text-light-100">
+                    {formatDateTime(file.$updatedAt)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-gray-500">Owner</span>
+                  <span className="font-medium text-light-100">
+                    {typeof file.owner === "string" ? "You" : file.owner.fullname}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-gray-500">Extension</span>
+                  <span className="font-medium uppercase text-light-100">
+                    {file.extension || "—"}
+                  </span>
+                </div>
+              </div>
+            )}
           </DialogHeader>
           {["Rename", "Share", "Delete"].includes(action) && (
             <DialogFooter>
               <button
                 className=" bg-rose-500 flex justify-center items-center gap-3 text-white rounded-full mt-2 p-2 w-full"
-                onClick={() => {
-                  handleAction;
-                }}
+                onClick={handleAction}
+                disabled={isLoading}
               >
                 <p>{action}</p>
                 {isLoading && (
@@ -117,7 +231,16 @@ export default function DropdownMenuDemo({ file }: { file: Models.Document }) {
     <>
       <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
         <DropdownMenuTrigger asChild>
-          <MoreVertical className="text-gray-400 mb-4"></MoreVertical>
+          <button
+            type="button"
+            className="text-gray-400 mb-4"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+          >
+            <MoreVertical />
+          </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" align="start">
           <DropdownMenuLabel className="truncate">
@@ -131,7 +254,9 @@ export default function DropdownMenuDemo({ file }: { file: Models.Document }) {
                   key={index}
                   className=" data-[highlighted]:bg-gray-100 
      p-2 cursor-pointer flex items-center gap-3 justify-start rounded-[4px] w-full"
-                  onClick={() => {
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
                     setAction(item.name);
                     setIsDropdownOpen(false);
                     if (
@@ -143,9 +268,9 @@ export default function DropdownMenuDemo({ file }: { file: Models.Document }) {
                   }}
                 >
                   {item.name === "Download" ? (
-                    <Link
-                      href={constructDownloadUrl(file.bucketFileId)}
-                      download={file.name}
+                    <button
+                      type="button"
+                      onClick={handleDownload}
                       className="flex items-center gap-2"
                     >
                       <img
@@ -155,7 +280,7 @@ export default function DropdownMenuDemo({ file }: { file: Models.Document }) {
                         height={30}
                       ></img>
                       {item.name}
-                    </Link>
+                    </button>
                   ) : (
                     <div className="flex items-center gap-2">
                       <img

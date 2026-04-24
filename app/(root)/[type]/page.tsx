@@ -1,10 +1,10 @@
 import Sort from "@/components/Sort";
 import { getFiles } from "@/lib/actions/files.actions";
+import type { BackendFile } from "@/lib/backend/types";
 import { convertFileSize, getFileTypesParams } from "@/lib/utils";
 import React from "react";
-import { Models } from "node-appwrite";
 import Card from "@/components/Card";
-const sortFiles = (files: Models.Document[], sort: string) => {
+const sortFiles = (files: BackendFile[], sort: string) => {
   const [field, order] = sort.split("-");
   const direction = order === "asc" ? 1 : -1;
 
@@ -39,12 +39,12 @@ const page = async ({ params, searchParams }: SearchParamProps) => {
 
   const files = await getFiles();
   const fileTypes = getFileTypesParams(type);
-  const filteredFiles = files.documents.filter((file: Models.Document) =>
+  const filteredFiles = files.documents.filter((file: BackendFile) =>
     fileTypes.includes(file.type)
   );
   const sortedFiles = sortFiles([...filteredFiles], sortValue);
   const totalSize = filteredFiles.reduce(
-    (total: number, file: Models.Document) => total + (Number(file.size) || 0),
+    (total: number, file: BackendFile) => total + (Number(file.size) || 0),
     0
   );
   return (
@@ -66,7 +66,7 @@ const page = async ({ params, searchParams }: SearchParamProps) => {
       </div>
       {sortedFiles.length > 0 ? (
         <section className="mt-10 grid sm:grid-cols-2  md:grid-cols-4 gap-10">
-          {sortedFiles.map((file: Models.Document) => {
+          {sortedFiles.map((file: BackendFile) => {
             return <Card key={file.$id} file={file}></Card>;
           })}
         </section>

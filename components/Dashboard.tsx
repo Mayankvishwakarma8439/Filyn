@@ -1,9 +1,9 @@
 import { convertFileSize, formatDateTime, getUsageSummary } from "@/lib/utils";
+import type { BackendFile, DocumentList } from "@/lib/backend/types";
 import Link from "next/link";
-import { Models } from "node-appwrite";
 import Thumbnail from "./Thumbnail";
 
-const Dashboard = ({ files }: { files: Models.DocumentList<Models.Document> }) => {
+const Dashboard = ({ files }: { files: DocumentList<BackendFile> }) => {
   const allFiles = files.documents ?? [];
 
   const totalSpace = allFiles.reduce(
